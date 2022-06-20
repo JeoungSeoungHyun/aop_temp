@@ -44,25 +44,22 @@ public class DispatcherServlet extends HttpServlet{
 		
 		String identifier = req.getRequestURI();
 		
-		if(identifier.equals("/join")){
+		// 리플레션 발동
+		// 런타임시 실행되어 무슨 메서드들이 있는지 확인
+		Method[] methods = controller.getClass().getDeclaredMethods();
+		for(Method method : methods) {
+			UtilsLog.getInsance().info(TAG, method.getName());
 			
-			// 인터셉터 코드
-			HttpSession session = req.getSession();
-			Member member = (Member)session.getAttribute("principal");
-			
-			if(member == null) {
-				PrintWriter out = resp.getWriter();
-				out.println("인증되지 않은 사용자입니다");
-				out.flush();
-				out.close();
+			String idf = identifier.replace("/", "");
+			if(idf.equals(method.getName())) {
+				UtilsLog.getInsance().info(TAG, method.getName()+"이 실행되었습니다");
+				try {
+					method.invoke(controller, req,resp);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
-			
-			controller.join(req,resp);
-		} else if(identifier.equals("/login")){
-			controller.login(req,resp);
-		} else if(identifier.equals("/findById")){
-			controller.findById(req,resp);
-		} 
+		}
 	}
 
 	@Override
