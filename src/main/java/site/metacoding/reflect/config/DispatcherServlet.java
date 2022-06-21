@@ -3,6 +3,7 @@ package site.metacoding.reflect.config;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -18,7 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import site.metacoding.reflect.config.web.RequestMapping;
+import site.metacoding.reflect.config.web.RequestMaping;
 import site.metacoding.reflect.domain.Member;
 import site.metacoding.reflect.util.UtilsLog;
 import site.metacoding.reflect.web.MemberController;
@@ -55,9 +56,9 @@ public class DispatcherServlet extends HttpServlet{
 		// 런타임시 실행되어 무슨 메서드들이 있는지 확인
 		Method[] methods = controller.getClass().getDeclaredMethods();
 		for(Method method : methods) {
-			Annotation annotation = method.getDeclaredAnnotation(RequestMapping.class);
+			Annotation annotation = method.getDeclaredAnnotation(RequestMaping.class);
 //			System.out.println(annotation.toString());
-			RequestMapping requestMapping = (RequestMapping)annotation;
+			RequestMaping requestMapping = (RequestMaping)annotation;
 //			System.out.println("밸류 : " +requestMapping.value().toString());
 //			System.out.println("idf : " + identifier);
 			if(requestMapping.value().equals(identifier)) {				
@@ -85,8 +86,18 @@ public class DispatcherServlet extends HttpServlet{
 							paramList[i] = resp;
 						// 3. Member를 찾으면 없기 때문에 new해서 넣어준다.
 						} else {
-							System.out.println(cls + "입니다.");
+//							System.out.println(cls + "입니다.");
 							paramList[i] =  cls.getConstructor().newInstance();
+							Method[] ms = paramList[i].getClass().getDeclaredMethods();
+							for(Method m : ms) {
+								if(m.getName().contains("set")) {
+									String field = req.getParameter(m.getName().replace("set", "").toLowerCase());
+									if(field != null) {
+//										System.out.println(field);
+										m.invoke(paramList[i], field);
+									}
+								}								
+							}
 						}
 					}
 					// invoke에는 파라미터 부분에 List가 아닌 배열을 넣어주면 순서대로 바인딩이 된다.
